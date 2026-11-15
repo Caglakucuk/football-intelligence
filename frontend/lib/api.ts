@@ -6,25 +6,58 @@ import type {
   TeamPerformance,
 } from "./types";
 
+const sleep = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms));
+
 async function request<T>(path: string): Promise<T> {
-  const response = await fetch(`/api/${path}`, {
-    cache: "no-store",
-  });
+  const maxAttempts = 3;
 
-  if (!response.ok) {
-    const payload = await response.json().catch(() => null);
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const response = await fetch(`/api/${path}`, {
+        cache: "no-store",
+      });
 
-    const message =
-      typeof payload?.error === "string"
-        ? payload.error
-        : typeof payload?.detail === "string"
-          ? payload.detail
-          : `Backend request failed (${response.status})`;
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        const message =
+          typeof payload?.error === "string"
+            ? payload.error
+            : typeof payload?.detail === "string"
+              ? payload.detail
+              : `Backend request failed (${response.status})`;
 
-    throw new Error(message);
+        const error = new Error(message);
+
+        if (
+          attempt === maxAttempts ||
+          ![502, 503, 504].includes(response.status)
+        ) {
+          throw error;
+        }
+
+        await sleep(attempt * 1500);
+        continue;
+      }
+
+      return (await response.json()) as T;
+    } catch (error) {
+      if (attempt === maxAttempts) {
+        throw error;
+      }
+
+      if (
+        error instanceof Error &&
+        error.message.startsWith("Backend request failed (")
+      ) {
+        throw error;
+      }
+
+      await sleep(attempt * 1500);
+    }
   }
 
-  return response.json() as Promise<T>;
+  throw new Error("Unable to load football data.");
 }
 
 export const getStandings = () =>
