@@ -1,0 +1,9 @@
+export type Team = { id: number; name: string; logo: string | null }
+export type StandingsRow = { team_id: number; team: string; played: number; wins: number; draws: number; losses: number; goals_for: number; goals_against: number; goal_difference: number; points: number; position: number }
+export type StandingsResponse = { league: string; season: number; standings: StandingsRow[] }
+export type TeamsResponse = { total: number; teams: Team[] }
+export type Fixture = { id: number; match_date: string; status: string; home_team_id: number; home: string; away_team_id: number; away: string; home_goals: number | null; away_goals: number | null }
+export type FixturesResponse = { total: number; fixtures: Fixture[] }
+export type RecentResult = { fixture_id: number; date: string; venue: 'home' | 'away'; scored: number; conceded: number; result: 'W' | 'D' | 'L' }
+export type SplitStats = { played: number; wins: number; draws: number; losses: number }
+export type TeamPerformance = { team_id: number; team: string; season: number; played: number; wins: number; draws: number; losses: number; win_rate: number; avg_goals_scored: number; avg_goals_conceded: number; home: SplitStats; away: SplitStats; last_5: RecentResult[] }
